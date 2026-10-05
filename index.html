@@ -386,9 +386,15 @@
   var PDF = 'Jaroslav_Lufinka_CV.pdf';
 
   // The sheet is a fixed 940px design; shrink it to fit narrower windows.
-  function fit() { root.style.setProperty('--fit', Math.min(1, (root.clientWidth - 32) / 940)); }
+  // A hidden window reports zero width; leave the sheet at full size until a real width arrives.
+  function fit() {
+    var width = root.clientWidth;
+    if (!width) { root.style.removeProperty('--fit'); return; }
+    root.style.setProperty('--fit', Math.max(0.2, Math.min(1, (width - 32) / 940)));
+  }
   fit();
   window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
 
   // Opened from disk or a web server the button prints (save as PDF from the dialog).
   // Inside a claude.ai artifact printing is blocked, so it hands over the prebuilt PDF instead.
