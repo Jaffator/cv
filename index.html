@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jaroslav Lufinka CV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* The sheet is drawn at 940 × 1329 px (A4 ratio) and scaled to 210 mm for print. */
+  :root {
+    --teal: #006666;
+    --accent: #1AB0B3;
+    --ink: #3E3E3E;
+    --rule: #BDBDBD;
+    --icon: #B9B9B9;
+    --rubik: Rubik, Arial, Helvetica, sans-serif;
+    --inter: Inter, Arial, Helvetica, sans-serif;
+    /* Screen-only chrome around the sheet; the sheet itself is always light. */
+    --desk: #E4E8E8;
+    --desk-ink: #2F3B3B;
+    --desk-muted: #5F6E6E;
+    --button: #006666;
+    --button-ink: #FFFFFF;
+    --sheet-shadow: rgba(0, 40, 40, .2);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --desk: #121A1A; --desk-ink: #E3ECEC; --desk-muted: #93A5A5; --button: #1AB0B3; --button-ink: #06201F; --sheet-shadow: rgba(0, 0, 0, .6); color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --desk: #121A1A; --desk-ink: #E3ECEC; --desk-muted: #93A5A5; --button: #1AB0B3; --button-ink: #06201F; --sheet-shadow: rgba(0, 0, 0, .6); color-scheme: dark; }
+
+  body, body * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: var(--desk); font: 400 12px/15px var(--inter); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  [hidden] { display: none !important; }
+  a { color: inherit; text-decoration: none; }
+  ul { list-style: none; }
+
+  .page {
+    position: relative;
+    width: 940px;
+    height: 1329px;
+    margin: 0 auto;
+    padding: 29px 29px 0 28px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 14px var(--sheet-shadow);
+    zoom: var(--fit, 1);
+  }
+
+  /* Screen chrome: toolbar above the sheet, hidden in print */
+  .desk { padding: 16px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    max-width: 940px;
+    margin: 0 auto 16px;
+    font: 400 14px/20px var(--rubik);
+    color: var(--desk-muted);
+  }
+  .toolbar strong { font-weight: 500; color: var(--desk-ink); }
+  .toolbar .actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+  .toolbar button {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--button);
+    color: var(--button-ink);
+    font: 500 14px/20px var(--rubik);
+    cursor: pointer;
+  }
+  .toolbar button:hover { filter: brightness(1.08); }
+  .toolbar button:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
+  .page::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 325px;
+    background: var(--teal);
+  }
+
+  /* Header */
+  .header { position: relative; height: 154px; }
+  .photo {
+    position: absolute;
+    left: 81px;
+    top: 9px;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .header-text { position: absolute; left: 339px; top: 9px; width: 529px; }
+  .name { font: 500 28px/33px var(--rubik); text-transform: uppercase; padding-bottom: 4px; }
+  .role { font: 400 16px/19px var(--rubik); color: var(--accent); padding-bottom: 4px; }
+  .contacts { display: flex; flex-wrap: wrap; margin-top: 8px; }
+  .contact { display: flex; align-items: center; padding-bottom: 4px; font: 400 13px/15px var(--rubik); }
+  .contact svg { width: 16px; height: 16px; flex-shrink: 0; fill: var(--icon); }
+  .contact span { padding: 0 12px 0 3px; white-space: nowrap; }
+
+  /* Columns */
+  .columns { position: relative; display: flex; gap: 39px; }
+  .side { width: 275px; flex-shrink: 0; color: #fff; }
+  .main { width: 569px; flex-shrink: 0; }
+
+  .section + .section { margin-top: 16px; }
+  .section-title {
+    margin: 0 17px -1px;
+    padding: 8px 0 8px;
+    border-top: 1px solid transparent;
+    font: 400 16px/19px var(--rubik);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule);
+  }
+  .side .section-title { border-bottom-color: #fff; }
+
+  .item { position: relative; padding: 9px 17px 7px; border: solid transparent; border-width: 1px 0; }
+  .h { font: 400 15px/18px var(--rubik); }
+  .h.strong { font-weight: 500; }
+  .date { font: 400 12px/15px var(--inter); }
+
+  .bullets li { position: relative; padding-left: 18px; }
+  .bullets li::before { content: "•"; position: absolute; left: 4px; }
+
+  /* Main column */
+  .skill { padding-bottom: 11px; }
+  .skill p { padding-top: 4px; }
+
+  .job { padding-left: 69px; }
+  .job .logo { position: absolute; left: 17px; top: 9px; width: 40px; height: 40px; object-fit: contain; }
+  .job .row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .job .date { padding-top: 1px; color: #384347; white-space: nowrap; }
+  .job .loc { padding-top: 0; color: var(--ink); }
+  .job .row + .row { margin-top: 6px; }
+  .job .org { font: 400 14px/17px var(--rubik); color: var(--accent); }
+  .job .lead { margin-top: 8px; }
+  .job .bullets { margin-top: 3px; }
+
+  /* Sidebar */
+  .edu .school { font: 400 13px/15px var(--rubik); margin-top: 8px; }
+  .edu .date { margin-top: 8px; }
+
+  .lang { display: flex; justify-content: space-between; }
+  .lang .name-l { font: 400 14px/17px var(--rubik); }
+  .lang .level { padding: 1px 20px 0 0; }
+
+  .course p { padding-top: 4px; }
+
+  .project .date { margin-top: 8px; }
+  .project .lead { padding-top: 8px; }
+  .project .bullets { margin-top: 6px; }
+
+  .interest { padding-left: 44px; }
+  .interest svg { position: absolute; left: 17px; top: 11px; width: 16px; height: 16px; fill: #fff; }
+  .interest .h { padding-bottom: 3px; }
+  .interest p { padding-top: 2px; }
+
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .desk { padding: 0; }
+    .toolbar { display: none; }
+    .page { margin: 0; box-shadow: none; zoom: 0.84436; }
+  }
+</style>
+</head>
+<body>
+<div class="desk">
+<div class="toolbar">
+  <span><strong>Životopis</strong> · A4, 1 strana</span>
+  <span class="actions">
+    <span id="export-note" role="status"></span>
+    <button type="button" id="export-pdf">Export do PDF</button>
+  </span>
+</div>
+<div class="page">
+
+  <header class="header">
+    <img class="photo" src="assets/photo.jpg" alt="Jaroslav Lufinka">
+    <div class="header-text">
+      <h1 class="name">Ing. Jaroslav Lufinka</h1>
+      <div class="role">Softwarový inženýr</div>
+      <div class="contacts">
+        <a class="contact" href="tel:+420608850933">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 18.348c0 .274-.055.657-.164 1.095-.11.492-.22.82-.328 1.094-.22.548-.821 1.095-1.916 1.642-.93.547-1.915.821-2.9.821-.274 0-.548 0-.821-.055-.274-.055-.548-.11-.876-.219-.328-.054-.602-.164-.766-.218-.164-.055-.438-.165-.876-.329-.383-.164-.656-.219-.766-.273-.985-.384-1.915-.767-2.736-1.314-1.314-.82-2.682-1.915-4.105-3.338s-2.572-2.791-3.393-4.16a11.5 11.5 0 0 1-1.258-2.736c-.055-.055-.165-.328-.329-.766-.11-.383-.219-.711-.273-.876-.055-.164-.165-.383-.274-.711-.055-.328-.11-.657-.164-.93C1 6.855 1 6.582 1 6.254c0-.93.274-1.916.766-2.9.602-1.04 1.15-1.697 1.697-1.916.219-.11.602-.22 1.04-.329.492-.054.82-.109 1.094-.109h.328c.22.11.493.493.876 1.204.11.219.274.493.438.876.219.328.383.656.547.985l.493.82c.054.055.11.165.273.384s.274.437.329.547c.054.164.109.328.109.438 0 .219-.164.492-.438.82-.273.274-.602.603-.985.822-.328.273-.657.547-.93.875-.329.274-.493.493-.493.712 0 .054.055.218.11.328.054.164.11.274.11.328.054.055.109.22.218.383.11.165.164.274.219.274.766 1.423 1.697 2.682 2.682 3.667a15.6 15.6 0 0 0 3.666 2.736q.082 0 .329.164c.164.11.273.22.383.22q.082.082.328.163c.11.055.219.055.328.055.165 0 .438-.11.712-.438.274-.273.602-.602.82-.985.274-.328.548-.657.876-.93.329-.329.548-.438.767-.438.164 0 .328 0 .437.11.165.054.383.164.602.328.22.11.329.219.383.273.22.165.548.329.821.493.274.164.602.328.985.547.383.164.657.329.876.438q1.068.575 1.15.82c.054.11.054.22.054.33"/></svg>
+          <span>+420 608 850 933</span>
+        </a>
+        <a class="contact" href="mailto:jardalufi@gmail.com">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.918 6.75v7.317c0 .475.095.808.19 1.045.142.238.285.38.475.476.19.142.428.19.665.19.523 0 .998-.19 1.378-.476.333-.285.666-.665.856-1.045.237-.428.38-.855.475-1.33.095-.428.095-.95.095-1.663a7.8 7.8 0 0 0-.285-2.139 6.3 6.3 0 0 0-.903-1.995 8 8 0 0 0-1.426-1.711c-.522-.523-1.14-.95-1.805-1.33a9.5 9.5 0 0 0-2.186-.856c-.76-.19-1.568-.332-2.423-.332s-1.616.142-2.376.332-1.52.523-2.186.903-1.235.855-1.805 1.378c-.57.57-1.046 1.14-1.426 1.853-.38.665-.665 1.378-.903 2.138a8.3 8.3 0 0 0-.332 2.424c0 .807.142 1.615.332 2.376.238.76.475 1.473.903 2.185.38.666.855 1.283 1.426 1.806.57.523 1.14 1.045 1.805 1.425s1.378.666 2.186.903c.76.238 1.52.285 2.376.285s1.663-.095 2.423-.332c.808-.238 1.52-.523 2.233-.95l.998 1.757c-.808.476-1.71.903-2.708 1.188-.95.238-1.948.428-2.994.428-.998 0-1.948-.142-2.898-.38a12.2 12.2 0 0 1-2.661-1.14 14.7 14.7 0 0 1-2.233-1.711 10 10 0 0 1-1.711-2.233c-.475-.808-.808-1.71-1.093-2.614-.285-.95-.38-1.948-.38-2.946s.095-1.948.38-2.898.665-1.853 1.093-2.614a20 20 0 0 1 1.71-2.28 11.2 11.2 0 0 1 2.234-1.711c.808-.475 1.71-.808 2.66-1.093.951-.237 1.901-.38 2.9-.38a12.3 12.3 0 0 1 2.993.38c.95.285 1.805.618 2.613 1.093.808.428 1.568.95 2.233 1.616.666.665 1.236 1.33 1.711 2.138a8.9 8.9 0 0 1 1.093 2.47c.285.856.38 1.759.38 2.709 0 .523-.047.998-.142 1.52a7.5 7.5 0 0 1-.428 1.474c-.19.427-.428.902-.665 1.282-.285.38-.618.76-.95 1.046-.38.332-.761.57-1.236.76-.428.19-.903.238-1.426.238q-1.069 0-1.71-.428a4.1 4.1 0 0 1-1.093-1.14c-.428.38-.95.665-1.52.902-.57.238-1.236.286-1.901.286-.76 0-1.473-.143-2.091-.428a4.6 4.6 0 0 1-1.71-1.093c-.428-.428-.808-.998-1.093-1.615a5.6 5.6 0 0 1-.38-2.044c0-.712.142-1.33.427-1.995a5.1 5.1 0 0 1 1.093-1.616 5.8 5.8 0 0 1 1.663-1.14 6 6 0 0 1 2.09-.38c.57 0 1.094.047 1.569.19.522.19.95.38 1.378.665v-.903h2.043zm-4.942 8.41c.713 0 1.283-.143 1.806-.523.475-.285.855-.713 1.14-1.235v-2.756a2.7 2.7 0 0 0-.522-.76c-.19-.19-.38-.38-.666-.57-.285-.143-.522-.238-.855-.38a5.3 5.3 0 0 0-.95-.096c-.428 0-.903.095-1.283.285a2.8 2.8 0 0 0-.998.665c-.333.286-.57.618-.713 1.046-.142.38-.237.76-.237 1.188s.095.855.237 1.235c.143.38.38.713.665.998.238.285.618.475.998.665.428.143.903.238 1.378.238"/></svg>
+          <span>jardalufi@gmail.com</span>
+        </a>
+        <a class="contact" href="https://github.com/jaffator">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-link"/></svg>
+          <span>github.com/jaffator</span>
+        </a>
+        <a class="contact" href="https://bikecheck.cloud">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path id="i-link" d="M16.113 1c-1.77 0-3.54.67-4.783 2.057L9.657 4.539a1.415 1.415 0 0 0 0 1.961c.573.526 1.386.526 1.913 0l1.673-1.674c1.53-1.483 4.257-1.483 5.787 0a4.47 4.47 0 0 1 1.244 3.061c0 1.1-.43 2.2-1.244 2.87L17.5 12.43c-.526.527-.526 1.34 0 1.914.287.286.717.43.956.43.288 0 .718-.144.957-.43l1.674-1.674C22.33 11.426 23 9.657 23 7.887c0-1.817-.67-3.587-2.056-4.83C19.7 1.67 17.93 1 16.113 1M12.43 17.5l-1.673 1.674c-1.53 1.483-4.257 1.483-5.787 0a4.47 4.47 0 0 1-1.244-3.061c0-1.1.43-2.2 1.244-2.87L6.5 11.57c.526-.527.526-1.34 0-1.913a1.415 1.415 0 0 0-1.96 0L3.056 11.33C1.67 12.574 1 14.344 1 16.113c0 1.817.67 3.587 2.057 4.83C4.3 22.33 6.07 23 7.887 23c1.77 0 3.54-.67 4.783-2.056l1.674-1.627a1.415 1.415 0 0 0 0-1.96c-.574-.527-1.387-.383-1.914.143m1.483-9.374-5.787 5.787a1.415 1.415 0 0 0 0 1.96c.287.24.717.383 1.004.383.24 0 .67-.143.957-.382l5.787-5.787a1.415 1.415 0 0 0 0-1.96 1.415 1.415 0 0 0-1.961 0"/></svg>
+          <span>bikecheck.cloud</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="columns">
+
+    <aside class="side">
+      <section class="section">
+        <h2 class="section-title">Vzdělání</h2>
+        <div class="item edu">
+          <div class="h strong">Informační a řídící technika</div>
+          <div class="school">Czech University of Life Sciences Prague</div>
+          <div class="date">2009 - 2014</div>
+        </div>
+        <div class="item edu">
+          <div class="h strong">Slaboproudá elektrotechnika a automatizace</div>
+          <div class="school">SPŠSE, Liberec</div>
+          <div class="date">2005 - 2009</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Jazyky</h2>
+        <div class="item lang">
+          <div class="name-l">Angličtina</div>
+          <div class="level">Plynule</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Kurzy / Školení</h2>
+        <div class="item course">
+          <div class="h">Theodinproject</div>
+          <p>JS, React, Databases, NodeJS</p>
+        </div>
+        <div class="item course">
+          <div class="h">AI Coding for Real Engineers</div>
+          <p>Matt Pocock</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Projekty</h2>
+        <div class="item project">
+          <div class="h strong">Lufihome</div>
+          <div class="date">2023 - 2024</div>
+          <p class="lead">Zabezpečovací systém</p>
+          <ul class="bullets">
+            <li>Vlastní zabezpečovací systém pro rodinný dům a chytrou domácnost navženou v Python(Flask), VueJS a běžíci na RasberryPi.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Zájmy</h2>
+        <div class="item interest">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.638 3.18c0 1.2-.978 2.18-2.18 2.18A2.183 2.183 0 0 1 6.28 3.18C6.28 1.979 7.259 1 8.46 1c1.2 0 2.18.979 2.18 2.18m10.053 11.565c-2.269 1.334-3.603-.668-4.626-2.536a1.9 1.9 0 0 0-.223-.578c-.756-1.557-1.6-3.07-2.49-4.626 1.69-.534 3.247-.045 4.448 1.69 1.023 1.38 3.336.045 2.313-1.379C17.8 3.98 14.286 3.18 10.772 5.27c-.134.09-.267.178-.356.267-.045.045-.09.045-.134.089-.133.044-.311.089-.444.178-2.18 1.334-4.182 1.067-5.739-1.068-.978-1.379-3.291-.089-2.313 1.335 1.958 2.758 4.626 3.78 7.518 2.891.89 1.557 1.735 3.158 2.58 4.76a15.4 15.4 0 0 0-3.336 2.313c-.045 0-.09.044-.134.088-.222.09-.4.312-.578.623-.712 1.424-1.38 2.892-2.09 4.36-.757 1.556 1.69 2.713 2.446 1.156.667-1.424 1.29-2.802 1.957-4.181a.57.57 0 0 0 .267-.178c1.2-1.068 2.58-1.913 4.092-2.447.089-.044.134-.089.222-.133 1.824 2.402 4.404 3.692 7.518 1.868 1.557-.845.044-3.425-1.557-2.446"/></svg>
+          <div class="h">Sport</div>
+          <p>Terénní i silniční cyklistika, běh, alpinismus.</p>
+        </div>
+        <div class="item interest">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.4 8.414c-.13.13-.173.3-.258.473-.043.214-.043.386-.043.558s0 .258-.043.258c-.043.043-.172.129-.387.344-.215.171-.344.3-.386.343-.258.215-.473.172-.645-.086L1.092 8.63c-.129-.172-.129-.344.043-.515.043-.043.172-.13.43-.301.214-.172.343-.3.429-.344.086-.086.258-.129.601-.129.3 0 .559-.128.816-.343.172-.172.301-.473.387-.816.043-.344.129-.559.215-.645.043 0 .086-.086.214-.171.086-.086.258-.258.559-.473.258-.215.558-.472.902-.687 1.976-1.332 3.307-2.02 4.08-2.105 1.805 0 2.878 0 3.265.043.172 0 .129.043-.172.172q-2.641 1.16-3.35 1.675c-1.16.816-1.46 1.632-.816 2.491.515.688.816 1.031.859 1.074.129.086.086.215-.043.3-.043.044-.3.259-.86.774-.515.472-.772.73-.815.773-.215.086-.344.129-.387.086-.644-.73-1.16-1.16-1.59-1.332-.386-.171-.901-.085-1.46.258m6.313.559 8.978 10.48c.3.344.258.602-.043.86l-1.031.902c-.344.214-.601.171-.859-.086L8.652 10.734c-.086-.086-.086-.258 0-.43L10.24 8.93c.172-.086.344-.086.473.043M22.87 4.548c.257 1.547.128 2.75-.344 3.651-.73 1.29-1.847 1.762-3.393 1.375-.817-.172-1.547.043-2.191.687l-1.804 1.718-1.504-1.718 1.504-1.546a2.7 2.7 0 0 0 .687-1.16q.129-.645.129-1.417c0-.516 0-.945.086-1.289.215-.816 1.203-1.632 3.093-2.448.171-.086.3-.086.386.043.086.128.129.257.043.343-.172.172-.515.773-.988 1.761q-.322.194-.258.774c0 .343.301.773.86 1.16.859.6 1.546.429 2.104-.473.086-.172.3-.473.601-.902.258-.43.43-.687.473-.73a.32.32 0 0 1 .3-.215c.13.043.215.172.215.386M4.012 19.582l5.584-5.455 1.675 1.89-5.412 5.326c-.3.301-.559.344-.86.086l-.987-.988c-.344-.257-.344-.558 0-.859"/></svg>
+          <div class="h">Dílna</div>
+          <p>Vyrábění, sváření a kutilství všeho druhu.</p>
+        </div>
+        <div class="item interest">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.555 14.011V4.497c0-.12-.04-.201-.12-.281-.081-.08-.161-.08-.242-.08H2.807c-.08 0-.161 0-.241.08s-.12.16-.12.28v9.515c0 .12.04.201.12.281q.12.12.24.12h18.387q.12 0 .241-.12c.08-.08.12-.16.12-.28M23 4.497v12.485c0 .482-.16.924-.522 1.285a1.76 1.76 0 0 1-1.285.522h-6.262c0 .28.08.602.2.883q.18.482.362.843c.12.24.16.401.16.482 0 .2-.04.361-.2.522-.161.16-.322.2-.522.2H9.069c-.2 0-.361-.04-.522-.2-.16-.161-.2-.322-.2-.522 0-.12.04-.281.16-.482.12-.24.241-.522.362-.803.12-.321.2-.602.2-.923H2.807c-.482 0-.924-.16-1.285-.522A1.76 1.76 0 0 1 1 16.982V4.497c0-.522.16-.964.522-1.325a1.76 1.76 0 0 1 1.285-.522h18.386c.482 0 .924.16 1.285.522.361.361.522.803.522 1.325"/></svg>
+          <div class="h">Technologie</div>
+          <p>Rád objevuju nové technologie, frameworky, AI nástroje. Zkrátka mě baví se učit nové věci a porozumět jim.</p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="section">
+        <h2 class="section-title">O mně</h2>
+        <div class="item">
+          <p>Po 8 letech vývoje softwarových řešení pro automotive R&amp;D se naplno věnuji modernímu backend vývoji s přesahem do full-stacku.<br>
+          Aktuálně navrhuji a vyvíjím vlastní platformu BikeCheck, od prvotního konceptu a návrhu produktu až po architekturu, vývoj a nasazení.<br>
+          Baví mě učit se nové technologie a rovnou je zkoušet na vlastních projektech.<br>
+          Hledám backend pozici, ale nebráním se ani práci na frontendu.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Dovednosti / Technologie</h2>
+        <div class="item skill">
+          <div class="h">Backend &amp; Data</div>
+          <p>Node.js, TypeScript, NestJS, PostgreSQL, Prisma, BullMQ, Redis, REST API</p>
+        </div>
+        <div class="item skill">
+          <div class="h">Frontend &amp; DevOps</div>
+          <p>React, Capacitor, VueJS, Docker, Git, Prometheus, Grafana, Hetzner Cloud</p>
+        </div>
+        <div class="item skill">
+          <div class="h">AI Integrace</div>
+          <p>LLM Tooling (Function Calling), Vercel AI SDK, Gemini/Openai API</p>
+        </div>
+        <div class="item skill">
+          <div class="h">Filozofie vývoje</div>
+          <p>AI používám jako nástroj pro urychlení vývoje. Zároveň si zakládám na tom, abych kódu rozuměl a dokázal ho kriticky posoudit. Jednu z inspirací AI workflow používám přístup Matta Pococka a jeho důraz na dobře navržený, typově bezpečný a udržovatelný kód. Protože výsledek je vždy jen tak dobrý, jak dobré je zadání a následná kontrola.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Pracovní zkušenosti</h2>
+
+        <div class="item job">
+          <img class="logo" src="assets/bikecheck.svg" alt="">
+          <div class="row">
+            <div class="h">Independent Software Developer</div>
+            <div class="date">08/2025</div>
+          </div>
+          <div class="row">
+            <div class="org"><a href="https://bikecheck.cloud">Bikecheck.cloud</a></div>
+          </div>
+          <p class="lead">Vývoj platformy BikeCheck, aplikace pro správu jízdních kol pro uživatele a servisy.</p>
+          <ul class="bullets">
+            <li><b>Architektura &amp; Backend:</b> End-to-end návrh a implementace v TypeScriptu a NestJS. Relační modelování (PostgreSQL, Prisma), tvorba REST API a autentizace</li>
+            <li><b>Mikroslužby &amp; DevOps:</b> Vývoj mikroslužby pro integraci platformy Strava. Řešení OAuth2 autentizace, webhooky se zpracováním na pozadí (BullMQ). Nasazení na Hetzner Cloud s observability stackem (Prometheus, Grafana, Loki)</li>
+            <li><b>Frontend &amp; mobilní aplikace:</b> Vývoj responzivního rozhraní v Reactu a mobilní aplikace v Capacitoru včetně přípravy buildů pro Google Play a App Store</li>
+            <li><b>Integrace LLM</b>: Návrh AI asistenta s využitím (Function Calling) v NestJS</li>
+          </ul>
+        </div>
+
+        <div class="item job">
+          <img class="logo" src="assets/zf.svg" alt="">
+          <div class="row">
+            <div class="h">R&amp;D Software Developer</div>
+            <div class="date">02/2017 - 07/2025</div>
+          </div>
+          <div class="row">
+            <div class="org">ZF</div>
+            <div class="date loc">Jablonec nad Nisou</div>
+          </div>
+          <ul class="bullets">
+            <li>Návrh komplexní architektury: Vytvářel jsem robustní aplikace (Labview, Python) s využitím pokročilých návrhových vzorů (např. stavové automaty) a paralelního zpracování, kde byla kritická stabilita běhu</li>
+            <li>Automatizace a optimalizace procesů: Vyvinul jsem interní aplikaci pro kalibraci testovacích stanic (20+ denních uživatelů). Odstraněním manuálních kroků se proces zkrátil z několika dnů na jednotky hodin</li>
+            <li>Kompletní softwarové řešení pro testování brzdových válců včetně analýzy dat a ukládání do databáze MySQL</li>
+          </ul>
+        </div>
+
+        <div class="item job">
+          <img class="logo" src="assets/preciosa.svg" alt="">
+          <div class="row">
+            <div class="h">Vývojový pracovník</div>
+            <div class="date">05/2015 - 02/2017</div>
+          </div>
+          <div class="row">
+            <div class="org">PRECIOSA</div>
+            <div class="date loc">Jablonec nad Nisou</div>
+          </div>
+          <ul class="bullets">
+            <li>Vývoj měřících zařízení v CAD a programování v Labview</li>
+          </ul>
+        </div>
+
+        <div class="item job">
+          <img class="logo" src="assets/dkl-tech.png" alt="">
+          <div class="row">
+            <div class="h">Mechatronik</div>
+            <div class="date">06/2014 - 04/2015</div>
+          </div>
+          <div class="row">
+            <div class="org">DKL TECH sro</div>
+            <div class="date loc">Jablonec nad Nisou</div>
+          </div>
+          <ul class="bullets">
+            <li>Vývoj scriptů pro automatizaci do CAD Catia pro konstrukční tým a programování PLC jednoúčelových strojů.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('export-pdf');
+  var note = document.getElementById('export-note');
+  var PDF = 'Jaroslav_Lufinka_CV.pdf';
+
+  // The sheet is a fixed 940px design; shrink it to fit narrower windows.
+  function fit() { root.style.setProperty('--fit', Math.min(1, (root.clientWidth - 32) / 940)); }
+  fit();
+  window.addEventListener('resize', fit);
+
+  // Opened from disk or a web server the button prints (save as PDF from the dialog).
+  // Inside a claude.ai artifact printing is blocked, so it hands over the prebuilt PDF instead.
+  function artifact() { return !!(window.claude && window.claude.use); }
+  if (artifact()) {
+    window.claude.use('downloads').then(function (downloads) { btn.hidden = !downloads; });
+  }
+  btn.addEventListener('click', async function () {
+    note.textContent = '';
+    if (!artifact()) { window.print(); return; }
+    try {
+      var downloads = await window.claude.use('downloads');
+      if (!downloads) throw { code: 'unavailable' };
+      var res = await fetch(PDF);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      await downloads.save({ filename: PDF, data: await res.blob() });
+    } catch (err) {
+      if (err && err.code === 'declined') return;
+      note.textContent = err && err.code === 'rate_limited' ? 'Zkuste to prosím za chvíli znovu.' : 'PDF se tady nepodařilo uložit.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
