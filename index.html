@@ -63,7 +63,7 @@
   }
   .toolbar strong { font-weight: 500; color: var(--desk-ink); }
   .toolbar .actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-  .toolbar button {
+  .toolbar button, .toolbar .button {
     padding: 8px 16px;
     border: 0;
     border-radius: 6px;
@@ -72,8 +72,9 @@
     font: 500 14px/20px var(--rubik);
     cursor: pointer;
   }
-  .toolbar button:hover { filter: brightness(1.08); }
-  .toolbar button:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
+  .toolbar .button { display: inline-block; }
+  .toolbar button:hover, .toolbar .button:hover { filter: brightness(1.08); }
+  .toolbar button:focus-visible, .toolbar .button:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
   .page::before {
     content: "";
     position: absolute;
@@ -174,6 +175,7 @@
   <span class="actions">
     <span id="export-note" role="status"></span>
     <button type="button" id="export-pdf">Export do PDF</button>
+    <a class="button" id="open-pdf" href="https://jaffator.github.io/cv/Jaroslav_Lufinka_CV.pdf" target="_blank" rel="noopener" hidden>Otevřít PDF</a>
   </span>
 </div>
 <div class="page">
@@ -398,9 +400,12 @@
 
   // Opened from disk or a web server the button prints (save as PDF from the dialog).
   // Inside a claude.ai artifact printing is blocked, so it hands over the prebuilt PDF instead.
+  // Viewers who are not offered downloads there (e.g. not signed in) get a link to the hosted PDF.
+  var link = document.getElementById('open-pdf');
   function artifact() { return !!(window.claude && window.claude.use); }
+  function useLink() { btn.hidden = true; link.hidden = false; }
   if (artifact()) {
-    window.claude.use('downloads').then(function (downloads) { btn.hidden = !downloads; });
+    window.claude.use('downloads').then(function (downloads) { if (!downloads) useLink(); });
   }
   btn.addEventListener('click', async function () {
     note.textContent = '';
@@ -413,7 +418,8 @@
       await downloads.save({ filename: PDF, data: await res.blob() });
     } catch (err) {
       if (err && err.code === 'declined') return;
-      note.textContent = err && err.code === 'rate_limited' ? 'Zkuste to prosím za chvíli znovu.' : 'PDF se tady nepodařilo uložit.';
+      if (err && err.code === 'rate_limited') { note.textContent = 'Zkuste to prosím za chvíli znovu.'; return; }
+      useLink();
     }
   });
 })();

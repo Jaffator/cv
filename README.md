@@ -2,6 +2,8 @@
 
 My résumé as a single HTML page, laid out for A4 and exported to PDF.
 
+Live: https://jaffator.github.io/cv/ · [PDF](https://jaffator.github.io/cv/Jaroslav_Lufinka_CV.pdf)
+
 - `index.html` – the page. Drawn at 940 × 1329 px and scaled to 210 mm in print.
 - `assets/` – photo and company logos.
 - `Jaroslav_Lufinka_CV.pdf` – the exported PDF.
