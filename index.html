@@ -398,8 +398,8 @@
   window.addEventListener('resize', fit);
   if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
 
-  // Opened from disk or a web server the button prints (save as PDF from the dialog).
-  // Inside a claude.ai artifact printing is blocked, so it hands over the prebuilt PDF instead.
+  // The button saves the prebuilt PDF (node build-pdf.js). A claude.ai artifact cannot start
+  // a download itself, so there the file goes through the downloads capability instead.
   // Viewers who are not offered downloads there (e.g. not signed in) get a link to the hosted PDF.
   var link = document.getElementById('open-pdf');
   function artifact() { return !!(window.claude && window.claude.use); }
@@ -409,7 +409,15 @@
   }
   btn.addEventListener('click', async function () {
     note.textContent = '';
-    if (!artifact()) { window.print(); return; }
+    if (!artifact()) {
+      var a = document.createElement('a');
+      a.href = PDF;
+      a.download = PDF;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return;
+    }
     try {
       var downloads = await window.claude.use('downloads');
       if (!downloads) throw { code: 'unavailable' };
