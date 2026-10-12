@@ -472,35 +472,46 @@
       if (!c.matches('title, link, style[data-cv], svg.sprite, div.desk, script[data-cv]')) c.remove();
     });
     body.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck'); });
-    ['edit', 'cancel', 'save'].forEach(function (id) { body.querySelector('#' + id).hidden = true; });
+    body.querySelector('#edit').hidden = false;
+    ['cancel', 'save'].forEach(function (id) { body.querySelector('#' + id).hidden = true; });
     body.querySelector('#note').textContent = '';
     var exp = body.querySelector('#export'); exp.disabled = false; exp.textContent = 'Export do PDF';
     return head + '\n' + body.innerHTML.trim() + '\n</body></html>';
   }
+  // Without the artifact's publish (opened from disk, on a web server, or as a bare top-level
+  // page) the edited sheet is kept in this browser's localStorage, keyed to the authored sheet
+  // so a republished page never shows stale edits over new content.
+  var STORE = 'cv-sheet';
+  function hash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = (h * 33) ^ str.charCodeAt(i); return (h >>> 0).toString(36) + str.length; }
+  var authored = page.innerHTML;
+  try {
+    var kept = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (kept && kept.base === hash(authored)) page.innerHTML = kept.html;
+    else if (kept) localStorage.removeItem(STORE);
+  } catch (e) {}
+  function keepLocally() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ base: hash(authored), html: page.innerHTML }));
+      flash('Uloženo v tomto prohlížeči.');
+    } catch (e) { flash('Změny zůstanou jen do obnovení stránky.'); }
+  }
   saveBtn.addEventListener('click', async function () {
-    if (!artifactApi) { setEditing(false); return; }
+    if (!artifactApi) { setEditing(false); keepLocally(); return; }
     saveBtn.disabled = true; flash('Ukládám…');
     try {
       setEditing(false);
       await artifactApi.publish(pageSource()); // every open view reloads to the new version
     } catch (err) {
       console.error(err);
-      flash(err && err.code === 'conflict' ? 'Mezitím někdo uložil jinou verzi, stránka se načte znovu.'
-        : err && err.code === 'not_writer' ? 'Tuhle stránku nemůžete upravovat.'
-        : 'Uložení se nepovedlo.');
-      if (snapshot !== null && err && err.code !== 'conflict') { page.innerHTML = snapshot; }
+      if (err && (err.code === 'not_writer' || err.code === 'not_granted')) { keepLocally(); flash('Do artifactu zapisovat nemůžete, změny jsou uložené jen v tomto prohlížeči.'); }
+      else if (err && err.code === 'conflict') flash('Mezitím někdo uložil jinou verzi, stránka se načte znovu.');
+      else { keepLocally(); flash('Uložení do artifactu se nepovedlo, změny jsou zatím jen v tomto prohlížeči.'); }
     }
     saveBtn.disabled = false;
   });
+  editBtn.hidden = false;
   if (inArtifact) {
-    Promise.all([window.claude.use('artifact'), window.claude.use('user')]).then(function (r) {
-      var user = r[1];
-      var canEdit = r[0] && (!user || user.canEdit() !== false);
-      if (canEdit) { artifactApi = r[0]; editBtn.hidden = false; }
-    });
-  } else {
-    saveBtn.textContent = 'Hotovo';
-    editBtn.hidden = false;
+    window.claude.use('artifact').then(function (api) { artifactApi = api; });
   }
 
   /* ---------- PDF: the rendered sheet redrawn as vector text with jsPDF ---------- */
