@@ -1,0 +1,192 @@
+/* Owner-only editing UI (editor.js). Nothing here ends up in the saved sheet:
+   the sheet's own look stays in index.html. */
+:root {
+  --cv-surface: #FFFFFF;
+  --cv-line: #C5D0D0;
+  --cv-danger: #B3261E;
+  --cv-ok: #0B7A55;
+  --cv-focus: #1AB0B3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --cv-surface: #1A2424; --cv-line: #344545; --cv-danger: #FF8A80; --cv-ok: #6FD9AE; }
+}
+:root[data-theme="dark"] { --cv-surface: #1A2424; --cv-line: #344545; --cv-danger: #FF8A80; --cv-ok: #6FD9AE; }
+
+/* Buttons shared by the bar, the dialog and the page toolbar */
+.cv-primary, .cv-secondary, .cv-plain {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  font: 500 14px/20px var(--rubik);
+  cursor: pointer;
+}
+.cv-primary { background: var(--button); color: var(--button-ink); }
+.cv-secondary { background: transparent; color: var(--desk-ink); box-shadow: inset 0 0 0 1px var(--cv-line); }
+.cv-plain { padding: 8px 6px; background: none; color: var(--desk-muted); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
+.cv-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.cv-secondary:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--desk-muted); }
+.cv-plain:hover { color: var(--desk-ink); }
+.cv-primary:disabled, .cv-secondary:disabled { opacity: .45; cursor: default; }
+.cv-primary:focus-visible, .cv-secondary:focus-visible, .cv-plain:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
+.toolbar .cv-secondary { background: transparent; color: var(--desk-ink); }
+
+/* Bar on top of the desk while editing */
+.cv-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: -16px -16px 16px;
+  padding: 10px 16px;
+  background: var(--desk);
+  box-shadow: 0 1px 0 var(--cv-line), 0 6px 16px -10px var(--sheet-shadow);
+  font: 400 14px/20px var(--rubik);
+  color: var(--desk-muted);
+}
+.cv-bar-in { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; max-width: 940px; margin: 0 auto; }
+.cv-bar strong { font-weight: 500; color: var(--desk-ink); }
+.cv-bar a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.cv-bar a:hover { color: var(--desk-ink); }
+.cv-state { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; min-width: 0; }
+.cv-status.cv-bad, .cv-fit.cv-bad { color: var(--cv-danger); }
+.cv-status.cv-good { color: var(--cv-ok); }
+.cv-fit.cv-bad { font-weight: 500; }
+.cv-buttons { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.cv-tips { flex-basis: 100%; padding-top: 4px; font-size: 13px; line-height: 19px; }
+.cv-tips kbd { padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--cv-line); font: inherit; }
+html.cv-editing .toolbar { display: none; }
+
+/* The sheet while editing: it may grow past A4 so nothing is hidden, the red line marks the cut */
+html.cv-editing .page { height: auto; min-height: 1329px; overflow: visible; }
+.cv-a4 { position: absolute; left: 0; right: 0; top: 1329px; z-index: 7; display: none; border-top: 2px dashed #D93025; pointer-events: none; }
+.cv-a4 span { position: absolute; right: 0; top: 0; padding: 2px 8px; border-radius: 0 0 0 6px; background: #D93025; color: #fff; font: 500 12px/16px var(--rubik); }
+.page.cv-overflow .cv-a4 { display: block; }
+
+html.cv-editing .page [contenteditable] { border-radius: 2px; outline: 1px dashed transparent; outline-offset: 2px; cursor: text; }
+html.cv-editing .page [contenteditable]:hover { outline-color: rgba(0, 102, 102, .5); }
+html.cv-editing .page [contenteditable]:focus { outline: 2px solid var(--cv-focus); background-color: rgba(26, 176, 179, .08); }
+html.cv-editing .page .side [contenteditable]:hover { outline-color: rgba(255, 255, 255, .65); }
+html.cv-editing .page .side [contenteditable]:focus { outline-color: #fff; background-color: rgba(255, 255, 255, .1); }
+html.cv-editing .page [contenteditable]:empty::before { content: "…"; opacity: .5; }
+html.cv-editing .page [contenteditable]:empty { min-width: 24px; min-height: 15px; }
+html.cv-editing .page .contact span:empty { display: inline-block; }
+html.cv-editing .page .bullets li:empty { min-height: 15px; }
+html.cv-editing .page .bullets li:empty::after { content: "Odrážka…"; opacity: .5; }
+html.cv-editing .page a, html.cv-editing .page img { -webkit-user-drag: none; }
+html.cv-editing .page .contact, html.cv-editing .page .section { position: relative; }
+html.cv-editing .page .photo, html.cv-editing .page .logo { cursor: pointer; }
+html.cv-editing .page .photo:hover, html.cv-editing .page .logo:hover { outline: 2px solid var(--cv-focus); outline-offset: 2px; }
+.page .cv-active { box-shadow: inset 0 0 0 1px rgba(26, 176, 179, .55); }
+.page .side .cv-active { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45); }
+
+/* Floating toolbar of the block under the pointer (item, contact or section). It sits just above
+   the block so it never covers the block's own text (a section's sits in the empty end of its title). */
+.cv-tools {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  right: 10px;
+  z-index: 8;
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 40, 40, .14), 0 4px 12px rgba(0, 40, 40, .2);
+}
+.section > .cv-tools { top: 4px; bottom: auto; right: 17px; }
+.contact > .cv-tools { right: auto; left: 0; }
+.cv-tools button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #2F3B3B;
+  cursor: pointer;
+}
+.cv-tools button:hover { background: #E3F3F3; color: #006666; }
+.cv-tools button[data-act="remove"]:hover, .cv-tools button[data-act="unlogo"]:hover { background: #FCE8E6; color: #B3261E; }
+.cv-tools button:disabled { opacity: .28; pointer-events: none; }
+.cv-tools button:focus-visible { outline: 2px solid #1AB0B3; outline-offset: -2px; }
+.cv-tools hr { width: 1px; margin: 4px 2px; border: 0; background: #DCE4E4; }
+.cv-tools svg, .cv-logo-slot svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Empty logo spot of a job without a logo */
+.cv-logo-slot {
+  position: absolute;
+  left: 17px;
+  top: 9px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px dashed #9DB5B5;
+  border-radius: 6px;
+  background: none;
+  color: #6B8080;
+  cursor: pointer;
+}
+.cv-logo-slot:hover, .cv-logo-slot:focus-visible { border-color: #1AB0B3; background: #F1FAFA; color: #006666; outline: none; }
+
+/* Sign-in dialog */
+.cv-dialog {
+  width: min(440px, calc(100vw - 32px));
+  margin: auto;
+  padding: 24px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--cv-surface);
+  color: var(--desk-ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  font: 400 14px/20px var(--rubik);
+}
+.cv-dialog::backdrop { background: rgba(8, 18, 18, .55); }
+.cv-dialog h2 { margin-bottom: 8px; font: 500 20px/26px var(--rubik); }
+.cv-dialog p { margin-bottom: 16px; color: var(--desk-muted); }
+.cv-dialog b { font-weight: 500; color: var(--desk-ink); }
+.cv-dialog a { color: var(--button); text-decoration: underline; text-underline-offset: 3px; }
+.cv-dialog .cv-field { display: block; margin-bottom: 12px; font-weight: 500; }
+.cv-dialog input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--cv-line);
+  border-radius: 8px;
+  background: var(--desk);
+  color: var(--desk-ink);
+  font: 400 14px/20px ui-monospace, Consolas, monospace;
+}
+.cv-dialog input:focus-visible { outline: 2px solid var(--cv-focus); outline-offset: 1px; }
+.cv-dialog .cv-check { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.cv-dialog .cv-check input { width: 16px; height: 16px; accent-color: var(--button); }
+.cv-dialog .cv-hint { font-size: 13px; line-height: 19px; }
+.cv-dialog .cv-error { color: var(--cv-danger); }
+.cv-dialog .cv-error:empty { display: none; }
+.cv-dialog .cv-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Message at the bottom, e.g. undo after deleting */
+.cv-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 10px 10px 16px;
+  border-radius: 10px;
+  background: #1F2A2A;
+  color: #F2F7F7;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .28);
+  font: 400 14px/20px var(--rubik);
+  transform: translateX(-50%);
+}
+.cv-toast button { padding: 4px 8px; border: 0; border-radius: 6px; background: none; color: #7FE0E2; font: 500 14px/20px var(--rubik); cursor: pointer; }
+.cv-toast button:hover { background: rgba(255, 255, 255, .08); }
+
+@media print {
+  .cv-bar, .cv-tools, .cv-logo-slot, .cv-a4, .cv-toast { display: none !important; }
+}

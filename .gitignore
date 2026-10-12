@@ -1,1 +1,3 @@
 dist/
+# built by the Pages workflow (node build-pdf.js)
+Jaroslav_Lufinka_CV.pdf
