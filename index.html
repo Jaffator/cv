@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Rubik:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style data-cv>
   /* The sheet is drawn at 940 × 1329 px (A4 ratio) and scaled to 210 mm for print. */
   :root {
     --teal: #006666;
@@ -64,7 +64,7 @@
   }
   .toolbar strong { font-weight: 500; color: var(--desk-ink); }
   .toolbar .actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-  .toolbar button, .toolbar .button {
+  .toolbar button {
     padding: 8px 16px;
     border: 0;
     border-radius: 6px;
@@ -73,9 +73,13 @@
     font: 500 14px/20px var(--rubik);
     cursor: pointer;
   }
-  .toolbar .button { display: inline-block; }
-  .toolbar button:hover, .toolbar .button:hover { filter: brightness(1.08); }
-  .toolbar button:focus-visible, .toolbar .button:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
+  .toolbar button:hover { filter: brightness(1.08); }
+  .toolbar button:disabled { opacity: .6; cursor: default; }
+  .toolbar button:focus-visible { outline: 2px solid var(--desk-ink); outline-offset: 2px; }
+  .toolbar .secondary { background: transparent; color: var(--desk-ink); box-shadow: inset 0 0 0 1px var(--desk-muted); }
+  /* Editing: every text field gets a frame so it is clear what can be clicked into */
+  .editing [contenteditable] { outline: 1px dashed rgba(26, 176, 179, .75); outline-offset: 1px; border-radius: 2px; }
+  .editing [contenteditable]:focus { outline: 2px solid var(--accent); }
   .page::before {
     content: "";
     position: absolute;
@@ -180,12 +184,13 @@
 <div class="toolbar">
   <span><strong>Životopis</strong> · A4, 1 strana</span>
   <span class="actions">
-    <span id="export-note" role="status"></span>
-    <button type="button" id="export-pdf">Export do PDF</button>
-    <a class="button" id="open-pdf" href="https://jaffator.github.io/cv/Jaroslav_Lufinka_CV.pdf" target="_blank" rel="noopener" hidden>Otevřít PDF</a>
+    <span id="note" role="status"></span>
+    <button type="button" id="edit" hidden>Upravit</button>
+    <button type="button" id="cancel" class="secondary" hidden>Zrušit</button>
+    <button type="button" id="save" hidden>Uložit</button>
+    <button type="button" id="export">Export do PDF</button>
   </span>
 </div>
-<!-- sheet:start · the web editor (editor.js) saves the sheet by rewriting everything between these two markers -->
 <div class="page">
 
   <header class="header">
@@ -384,15 +389,23 @@
 
   </div>
 </div>
-<!-- sheet:end -->
 </div>
 
-<script>
+<script data-cv>
 (function () {
+  'use strict';
   var root = document.documentElement;
-  var btn = document.getElementById('export-pdf');
-  var note = document.getElementById('export-note');
+  var page = document.querySelector('.page');
+  var note = document.getElementById('note');
+  var editBtn = document.getElementById('edit');
+  var cancelBtn = document.getElementById('cancel');
+  var saveBtn = document.getElementById('save');
+  var exportBtn = document.getElementById('export');
   var PDF = 'Jaroslav_Lufinka_CV.pdf';
+  var inArtifact = !!(window.claude && window.claude.use);
+  var artifactApi = null;
+
+  function flash(text) { note.textContent = text; }
 
   // The sheet is a fixed 940px design; shrink it to fit narrower windows.
   // A hidden window reports zero width; leave the sheet at full size until a real width arrives.
@@ -405,56 +418,264 @@
   window.addEventListener('resize', fit);
   if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
 
-  // The button saves the prebuilt PDF (node build-pdf.js). A claude.ai artifact cannot start
-  // a download itself, so there the file goes through the downloads capability instead.
-  // Viewers who are not offered downloads there (e.g. not signed in) get a link to the hosted PDF.
-  var link = document.getElementById('open-pdf');
-  function artifact() { return !!(window.claude && window.claude.use); }
-  function useLink() { btn.hidden = true; link.hidden = false; }
-  if (artifact()) {
-    window.claude.use('downloads').then(function (downloads) { if (!downloads) useLink(); });
-  }
-  btn.addEventListener('click', async function () {
-    note.textContent = '';
-    if (!artifact()) {
-      var a = document.createElement('a');
-      a.href = PDF + '?' + Date.now(); // never a cached copy, the PDF changes with every edit
-      a.download = PDF;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return;
+  /* ---------- Editing: every text field becomes contenteditable ---------- */
+
+  var BLOCK = /^(DIV|P|UL|LI|SECTION|HEADER|MAIN|ASIDE|H1|H2|IMG|SVG)$/;
+  function isField(el) {
+    var hasText = false, hasBlock = false;
+    for (var n = el.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && n.textContent.trim()) hasText = true;
+      else if (n.nodeType === 1 && BLOCK.test(n.tagName)) hasBlock = true;
     }
+    return hasText && !hasBlock;
+  }
+  var fields = function () {
+    return Array.prototype.filter.call(page.querySelectorAll('*'), isField);
+  };
+  var snapshot = null;
+  function setEditing(on) {
+    document.body.classList.toggle('editing', on);
+    fields().forEach(function (el) {
+      if (on) { el.setAttribute('contenteditable', 'true'); el.setAttribute('spellcheck', 'false'); }
+      else { el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck'); }
+    });
+    editBtn.hidden = on;
+    cancelBtn.hidden = !on;
+    saveBtn.hidden = !on;
+    flash('');
+  }
+  editBtn.addEventListener('click', function () { snapshot = page.innerHTML; setEditing(true); });
+  cancelBtn.addEventListener('click', function () { setEditing(false); if (snapshot !== null) page.innerHTML = snapshot; });
+  // Enter adds a line break only inside paragraphs and bullets; pasted text comes in plain.
+  page.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !document.body.classList.contains('editing')) return;
+    e.preventDefault();
+    var field = e.target.closest('[contenteditable]');
+    if (field && /^(P|LI)$/.test(field.tagName)) document.execCommand('insertLineBreak');
+  });
+  page.addEventListener('paste', function (e) {
+    if (!document.body.classList.contains('editing')) return;
+    e.preventDefault();
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+  });
+
+  /* ---------- Saving: the artifact republishes itself from the edited sheet ---------- */
+
+  var RESET = ':root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}';
+  function pageSource() {
+    // The viewer wraps the page in its own skeleton; reuse its reset verbatim when it is there.
+    var live = Array.prototype.find.call(document.head.querySelectorAll('style'), function (s) { return s.textContent.indexOf(':root{color-scheme:light') === 0; });
+    var head = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + (live ? live.textContent : RESET) + '</style></head><body>';
+    var body = document.body.cloneNode(true);
+    // Only what this page authored goes back out, never viewer state or injected runtime scripts.
+    Array.prototype.forEach.call(body.children, function (c) {
+      if (!c.matches('title, link, style[data-cv], svg.sprite, div.desk, script[data-cv]')) c.remove();
+    });
+    body.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck'); });
+    ['edit', 'cancel', 'save'].forEach(function (id) { body.querySelector('#' + id).hidden = true; });
+    body.querySelector('#note').textContent = '';
+    var exp = body.querySelector('#export'); exp.disabled = false; exp.textContent = 'Export do PDF';
+    return head + '\n' + body.innerHTML.trim() + '\n</body></html>';
+  }
+  saveBtn.addEventListener('click', async function () {
+    if (!artifactApi) { setEditing(false); return; }
+    saveBtn.disabled = true; flash('Ukládám…');
     try {
-      var downloads = await window.claude.use('downloads');
-      if (!downloads) throw { code: 'unavailable' };
-      var res = await fetch(PDF);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      await downloads.save({ filename: PDF, data: await res.blob() });
+      setEditing(false);
+      await artifactApi.publish(pageSource()); // every open view reloads to the new version
     } catch (err) {
+      console.error(err);
+      flash(err && err.code === 'conflict' ? 'Mezitím někdo uložil jinou verzi, stránka se načte znovu.'
+        : err && err.code === 'not_writer' ? 'Tuhle stránku nemůžete upravovat.'
+        : 'Uložení se nepovedlo.');
+      if (snapshot !== null && err && err.code !== 'conflict') { page.innerHTML = snapshot; }
+    }
+    saveBtn.disabled = false;
+  });
+  if (inArtifact) {
+    Promise.all([window.claude.use('artifact'), window.claude.use('user')]).then(function (r) {
+      var user = r[1];
+      var canEdit = r[0] && (!user || user.canEdit() !== false);
+      if (canEdit) { artifactApi = r[0]; editBtn.hidden = false; }
+    });
+  } else {
+    saveBtn.textContent = 'Hotovo';
+    editBtn.hidden = false;
+  }
+
+  /* ---------- PDF: the rendered sheet redrawn as vector text with jsPDF ---------- */
+
+  var FONTS = [
+    ['Rubik-Regular.ttf', 'Rubik', '400'], ['Rubik-Medium.ttf', 'Rubik', '500'],
+    ['Inter-Regular.ttf', 'Inter', '400'], ['Inter-Bold.ttf', 'Inter', '700'],
+  ];
+  var libPromise, fontPromise;
+  function loadLib() {
+    if (window.jspdf) return Promise.resolve();
+    return libPromise || (libPromise = new Promise(function (res, rej) {
+      var sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js';
+      sc.onload = res; sc.onerror = function () { rej(new Error('Knihovnu pro PDF se nepodařilo načíst.')); };
+      document.head.appendChild(sc);
+    }));
+  }
+  function toBase64(buf) {
+    var bytes = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  function loadFonts() {
+    return fontPromise || (fontPromise = Promise.all(FONTS.map(async function (f) {
+      var r = await fetch('assets/fonts/' + f[0]);
+      if (!r.ok) throw new Error('Písmo ' + f[0] + ' se nepodařilo načíst.');
+      return toBase64(await r.arrayBuffer());
+    })));
+  }
+  function fontId(style) {
+    var family = /rubik/i.test(style.fontFamily) ? 'Rubik' : 'Inter';
+    var w = parseInt(style.fontWeight, 10) || (style.fontWeight === 'bold' ? 700 : 400);
+    return family + (family === 'Rubik' ? (w >= 500 ? '500' : '400') : (w >= 600 ? '700' : '400'));
+  }
+  // Where Chrome puts the baseline inside a text box, in em, measured once per font.
+  var ascents = {};
+  function ascent(id) {
+    if (ascents[id] != null) return ascents[id];
+    var d = document.createElement('div');
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font:' + id.slice(-3) + ' 100px/100px ' + id.slice(0, -3) + ', sans-serif';
+    d.innerHTML = '<span>Hx</span><span style="display:inline-block;width:0;height:0"></span>';
+    document.body.appendChild(d);
+    var r = document.createRange(); r.selectNodeContents(d.firstChild);
+    var a = (d.lastChild.getBoundingClientRect().top - r.getBoundingClientRect().top) / 100;
+    d.remove();
+    return (ascents[id] = a);
+  }
+  function rgb(css) { var m = css.match(/[\d.]+/g) || [0, 0, 0]; return [+m[0], +m[1], +m[2]]; }
+  function loadImage(src) {
+    return new Promise(function (res, rej) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = src; });
+  }
+  // Icons and logos go in as PNG drawn from the live element at 4x; the photo is clipped to its circle.
+  async function raster(el, box) {
+    var S = 4, c = document.createElement('canvas');
+    c.width = Math.round(box.w * S); c.height = Math.round(box.h * S);
+    var ctx = c.getContext('2d'), img;
+    if (el.tagName === 'IMG') {
+      img = el.complete && el.naturalWidth ? el : await loadImage(el.src);
+    } else {
+      var svg = el.cloneNode(true);
+      svg.querySelectorAll('use').forEach(function (u) {
+        var ref = document.querySelector(u.getAttribute('href') || u.getAttribute('xlink:href'));
+        if (ref) u.replaceWith(ref.cloneNode(true));
+      });
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svg.setAttribute('width', c.width); svg.setAttribute('height', c.height);
+      svg.setAttribute('fill', getComputedStyle(el).fill);
+      img = await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg)));
+    }
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    var round = getComputedStyle(el).borderRadius.indexOf('50%') === 0;
+    var s = round ? Math.max(c.width / iw, c.height / ih) : Math.min(c.width / iw, c.height / ih);
+    if (round) { ctx.beginPath(); ctx.arc(c.width / 2, c.height / 2, c.width / 2, 0, Math.PI * 2); ctx.clip(); }
+    ctx.drawImage(img, (c.width - iw * s) / 2, (c.height - ih * s) / 2, iw * s, ih * s);
+    return c.toDataURL('image/png');
+  }
+  // Each text node split into words placed where Chrome laid them out, so the PDF keeps
+  // Chrome's line breaks and its kerning never drifts the text along a line.
+  function textRuns(node, origin) {
+    var runs = [], cur = null, text = node.textContent, range = document.createRange();
+    var style = getComputedStyle(node.parentElement);
+    if (style.textTransform === 'uppercase') text = text.toUpperCase();
+    for (var i = 0; i < text.length; i++) {
+      range.setStart(node, i); range.setEnd(node, i + 1);
+      var rs = range.getClientRects(), r = rs[rs.length - 1];
+      if (!r || (r.width === 0 && /\s/.test(text[i]))) continue; // collapsed whitespace
+      var top = r.top - origin.y;
+      if (/\s/.test(text[i])) { cur = null; continue; }
+      if (cur && Math.abs(top - cur.top) < 1) { cur.text += text[i]; }
+      else { cur = { text: text[i], top: top, left: r.left - origin.x }; runs.push(cur); }
+    }
+    if (!runs.length) return runs;
+    var id = fontId(style), size = parseFloat(style.fontSize);
+    runs.forEach(function (l) { l.font = id; l.size = size; l.color = rgb(style.color); l.baseline = l.top + ascent(id) * size; });
+    return runs;
+  }
+
+  async function build() {
+    var jobs = [loadLib(), loadFonts(), document.fonts.ready];
+    var fit = root.style.getPropertyValue('--fit');
+    root.style.setProperty('--fit', '1'); // measure the sheet at its design size
+    try {
+      var loaded = await Promise.all(jobs);
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
+      FONTS.forEach(function (f, i) { doc.addFileToVFS(f[0], loaded[1][i]); doc.addFont(f[0], f[1] + f[2], 'normal'); });
+      var pr = page.getBoundingClientRect(), origin = { x: pr.left, y: pr.top };
+      var k = doc.internal.pageSize.getWidth() / pr.width; // px -> pt
+      var box = function (el) { var r = el.getBoundingClientRect(); return { x: r.left - origin.x, y: r.top - origin.y, w: r.width, h: r.height }; };
+      var sideStyle = getComputedStyle(page, '::before');
+      doc.setFillColor.apply(doc, rgb(sideStyle.backgroundColor));
+      doc.rect(0, 0, parseFloat(sideStyle.width) * k, pr.height * k, 'F');
+
+      var walker = document.createTreeWalker(page, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+      var n, pending = [];
+      while ((n = walker.nextNode())) {
+        if (n.nodeType === 3) {
+          if (!n.textContent.trim()) continue;
+          textRuns(n, origin).forEach(function (l) {
+            doc.setFont(l.font, 'normal'); doc.setFontSize(l.size * k); doc.setTextColor(l.color[0], l.color[1], l.color[2]);
+            doc.text(l.text, l.left * k, l.baseline * k);
+            var li = n.parentElement.closest('.bullets li');
+            if (li && !li._bullet) { li._bullet = true; var b = box(li); doc.text('•', (b.x + 4) * k, l.baseline * k); }
+          });
+          continue;
+        }
+        var cs = getComputedStyle(n);
+        if (cs.display === 'none') continue;
+        if (n.tagName === 'IMG' || n.tagName === 'svg') pending.push([n, box(n)]);
+        if (n.classList.contains('section-title')) {
+          var b = box(n), bw = parseFloat(cs.borderBottomWidth);
+          doc.setFillColor.apply(doc, rgb(cs.borderBottomColor));
+          doc.rect(b.x * k, (b.y + b.h - bw) * k, b.w * k, bw * k, 'F');
+        }
+        if (n.tagName === 'A' && /^(https?:|mailto:|tel:)/.test(n.getAttribute('href') || '')) {
+          var lb = box(n); doc.link(lb.x * k, lb.y * k, lb.w * k, lb.h * k, { url: n.href });
+        }
+      }
+      page.querySelectorAll('.bullets li').forEach(function (li) { delete li._bullet; });
+      for (var i = 0; i < pending.length; i++) {
+        var b2 = pending[i][1];
+        doc.addImage(await raster(pending[i][0], b2), 'PNG', b2.x * k, b2.y * k, b2.w * k, b2.h * k);
+      }
+      var name = page.querySelector('.name').textContent.trim();
+      doc.setProperties({ title: 'Životopis – ' + name, author: name, subject: page.querySelector('.role').textContent.trim() });
+      return doc;
+    } finally {
+      if (fit) root.style.setProperty('--fit', fit); else root.style.removeProperty('--fit');
+    }
+  }
+  // Locally the browser saves the PDF itself; a claude.ai artifact cannot start a download,
+  // so there the file goes through the downloads capability and its confirmation.
+  async function handOver(doc) {
+    if (!inArtifact) { doc.save(PDF); return; }
+    var downloads = await window.claude.use('downloads');
+    if (!downloads) throw { code: 'unavailable' };
+    await downloads.save({ filename: PDF, data: doc.output('blob') });
+  }
+  exportBtn.addEventListener('click', async function () {
+    if (document.body.classList.contains('editing')) { flash('Nejdřív úpravy uložte nebo zrušte.'); return; }
+    exportBtn.disabled = true; exportBtn.textContent = 'Generuji…'; flash('');
+    try {
+      await handOver(await build());
+    } catch (err) {
+      console.error(err);
       if (err && err.code === 'declined') return;
-      if (err && err.code === 'rate_limited') { note.textContent = 'Zkuste to prosím za chvíli znovu.'; return; }
-      useLink();
+      flash(err && err.code === 'rate_limited' ? 'Zkuste to prosím za chvíli znovu.'
+        : err && err.code === 'unavailable' ? 'Stahování tu není k dispozici – otevřete stránku přihlášený.'
+        : 'PDF se nepodařilo vytvořit.');
+    } finally {
+      exportBtn.disabled = false; exportBtn.textContent = 'Export do PDF';
     }
   });
-})();
-
-// Owner-only editing lives in editor.js: open the page with #edit to sign in.
-// Only a browser that has signed in loads it on later visits, nobody else downloads it.
-(function () {
-  if (window.claude) return; // not inside the claude.ai artifact
-  var loaded = false;
-  function load() {
-    if (loaded) return;
-    loaded = true;
-    var s = document.createElement('script');
-    s.src = 'editor.js';
-    document.body.appendChild(s);
-  }
-  var signedIn = false;
-  try { signedIn = !!(localStorage.getItem('cv-editor-token') || sessionStorage.getItem('cv-editor-token')); } catch (e) {}
-  if (signedIn || location.hash === '#edit') load();
-  else window.addEventListener('hashchange', function () { if (location.hash === '#edit') load(); });
+  window.cvPdf = { build: build, source: pageSource };
 })();
 </script>
 </body>
