@@ -465,7 +465,9 @@
   function pageSource() {
     // The viewer wraps the page in its own skeleton; reuse its reset verbatim when it is there.
     var live = Array.prototype.find.call(document.head.querySelectorAll('style'), function (s) { return s.textContent.indexOf(':root{color-scheme:light') === 0; });
-    var head = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + (live ? live.textContent : RESET) + '</style></head><body>';
+    var tag = function (t) { return '<' + t + '>'; }; // keeps document tags out of this script's source
+    var head = '<!doctype html>' + tag('html') + tag('head') + '<meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">'
+      + tag('style') + (live ? live.textContent : RESET) + tag('/style') + tag('/head') + tag('body');
     var body = document.body.cloneNode(true);
     // Only what this page authored goes back out, never viewer state or injected runtime scripts.
     Array.prototype.forEach.call(body.children, function (c) {
@@ -476,7 +478,7 @@
     ['cancel', 'save'].forEach(function (id) { body.querySelector('#' + id).hidden = true; });
     body.querySelector('#note').textContent = '';
     var exp = body.querySelector('#export'); exp.disabled = false; exp.textContent = 'Export do PDF';
-    return head + '\n' + body.innerHTML.trim() + '\n</body></html>';
+    return head + '\n' + body.innerHTML.trim() + '\n' + tag('/body') + tag('/html');
   }
   // Without the artifact's publish (opened from disk, on a web server, or as a bare top-level
   // page) the edited sheet is kept in this browser's localStorage, keyed to the authored sheet
